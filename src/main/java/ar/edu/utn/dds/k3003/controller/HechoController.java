@@ -23,9 +23,9 @@ public class HechoController {
     //        return ResponseEntity.ok(fachadaFuente.Hechos());
     //    }
 
-    @GetMapping("/hecho/{nombre}")
-    public ResponseEntity<HechoDTO> obtenerHecho(@PathVariable String nombre) {
-        return ResponseEntity.ok(fachadaFuente.buscarHechoXId(nombre));
+    @GetMapping("/hecho/{id}")
+    public ResponseEntity<HechoDTO> obtenerHecho(@PathVariable String id) {
+        return ResponseEntity.ok(fachadaFuente.buscarHechoXId(id));
     }
 
     @PostMapping("/hecho")
