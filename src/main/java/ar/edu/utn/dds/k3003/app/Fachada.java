@@ -1,5 +1,6 @@
 package ar.edu.utn.dds.k3003.app;
 
+import ar.edu.utn.dds.k3003.clients.ProcesadorPdIProxy;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI;
 import ar.edu.utn.dds.k3003.facades.dtos.ColeccionDTO;
@@ -12,6 +13,7 @@ import ar.edu.utn.dds.k3003.repository.*;
 import lombok.Data;
 import lombok.val;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -23,7 +25,7 @@ import org.springframework.stereotype.Service;
 public class Fachada implements FachadaFuente {
     private ColeccionRepository coleccionRepo;
     private HechoRepository hechoRepo;
-    private FachadaProcesadorPdI procesadorPdI;
+    private ProcesadorPdIProxy procesadorPdI;
 
 
     @Autowired
@@ -134,12 +136,16 @@ public class Fachada implements FachadaFuente {
 
     @Override
     public void setProcesadorPdI(FachadaProcesadorPdI fachadaProcesadorPdI) {
-        this.procesadorPdI = fachadaProcesadorPdI;
+        this.procesadorPdI = (ProcesadorPdIProxy) fachadaProcesadorPdI;
     }
 
     @Override
     public PdIDTO agregar(PdIDTO pdIDTO) throws IllegalStateException {
-        return procesadorPdI.procesar(pdIDTO);
+        try {
+            return procesadorPdI.procesar(pdIDTO);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     @Override
     public List<ColeccionDTO> colecciones(){
