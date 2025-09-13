@@ -85,8 +85,10 @@ public class ColeccionController {
         try {
             List<HechoDTO> hechos = fachadaFuente.buscarHechosXColeccion(nombre);
             
-            // Gauge dinámico con hechos por colección
-            meterRegistry.gauge("dds.hechos.por.coleccion", "coleccion", nombre, hechos.size());
+            // Gauge dinámico con hechos por colección - usando Tags correctamente
+            meterRegistry.gauge("dds.hechos.por.coleccion", 
+                io.micrometer.core.instrument.Tags.of("coleccion", nombre), 
+                hechos.size());
             
             // Como el ejemplo: status=ok
             meterRegistry.counter("dds.colecciones", "operation", "buscar_hechos", "status", "ok").increment();
@@ -104,7 +106,7 @@ public class ColeccionController {
 
     @PostMapping("/coleccion")
     public ResponseEntity<ColeccionDTO> crearColeccion(@RequestBody ColeccionDTO coleccion) {
-        log.debug("📝 Creando nueva colección: {}", coleccion.getNombre());
+        log.debug("📝 Creando nueva colección: {}", coleccion.nombre());
         
         try {
             ColeccionDTO resultado = fachadaFuente.agregar(coleccion);
@@ -114,7 +116,7 @@ public class ColeccionController {
             
             // Como el ejemplo: status=ok
             meterRegistry.counter("dds.colecciones", "operation", "crear", "status", "ok").increment();
-            log.info("✅ Colección creada exitosamente: {}", resultado.getNombre());
+            log.info("✅ Colección creada exitosamente: {}", resultado.nombre());
             
             return ResponseEntity.ok(resultado);
             

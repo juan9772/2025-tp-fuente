@@ -1,5 +1,6 @@
 package ar.edu.utn.dds.k3003.controller;
 
+import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
@@ -21,12 +22,12 @@ import java.util.NoSuchElementException;
 public class HechoController {
 
     private static final Logger log = LoggerFactory.getLogger(HechoController.class);
-    private final FachadaFuente fachadaFuente;
+    private final Fachada fachadaFuente;
     private final MeterRegistry meterRegistry;
     private final AtomicInteger hechosActivosCount = new AtomicInteger(0);
 
     @Autowired
-    public HechoController(FachadaFuente fachadaFuente, MeterRegistry meterRegistry) {
+    public HechoController(Fachada fachadaFuente, MeterRegistry meterRegistry) {
         this.fachadaFuente = fachadaFuente;
         this.meterRegistry = meterRegistry;
         
@@ -72,7 +73,7 @@ public class HechoController {
             
             // Como el ejemplo: status=ok  
             meterRegistry.counter("dds.hechos", "operation", "crear", "status", "ok").increment();
-            log.info("✅ Hecho creado exitosamente con ID: {}", resultado.getId());
+            log.info("✅ Hecho creado exitosamente con ID: {}", resultado.id());
             
             return ResponseEntity.ok(resultado);
             
