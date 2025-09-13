@@ -81,4 +81,41 @@ public class MetricsController {
         log.info("🔧 Valor gauge cambiado a: {}", value);
         return ResponseEntity.ok("updated gauge: " + value);
     }
+
+    // Endpoint simple para testing
+    @GetMapping("/test-simple")
+    public ResponseEntity<String> testSimple() {
+        try {
+            // Test básico
+            meterRegistry.counter("dds.test.simple").increment();
+            debugGauge.set(42);
+            
+            log.info("✅ Test simple ejecutado");
+            return ResponseEntity.ok("simple test executed successfully");
+            
+        } catch (Exception ex) {
+            log.error("❌ Error en test simple: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).body("Error: " + ex.getMessage());
+        }
+    }
+
+    // Endpoint para simular actividad
+    @GetMapping("/simulate-activity")
+    public ResponseEntity<String> simulateActivity() {
+        try {
+            // Incrementar contadores
+            meterRegistry.counter("dds.colecciones", "operation", "listar", "status", "ok").increment();
+            meterRegistry.counter("dds.hechos", "operation", "crear", "status", "ok").increment();
+            
+            // Cambiar gauge
+            debugGauge.set((int)(Math.random() * 100));
+            
+            log.info("🎭 Actividad simulada");
+            return ResponseEntity.ok("activity simulated successfully");
+            
+        } catch (Exception ex) {
+            log.error("❌ Error al simular actividad: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).body("Error: " + ex.getMessage());
+        }
+    }
 }
