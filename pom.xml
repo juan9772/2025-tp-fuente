@@ -121,6 +121,11 @@
               <artifactId>lombok</artifactId>
             </exclude>
           </excludes>
+    <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-datadog</artifactId>
+        <version>1.12.0</version>
+    </dependency>
         </configuration>
       </plugin>
       <plugin>
