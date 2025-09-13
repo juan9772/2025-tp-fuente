@@ -52,9 +52,9 @@ public class DDMetricsUtils {
 		};
 		
 		registry = new DatadogMeterRegistry(config, Clock.SYSTEM);
-		registry.config().commonTags("app", appTag, "environment", "development");
+		registry.config().commonTags("app", appTag, "environment", "development", "service", "fuente");
 		
-		log.info("Datadog registry created with tags: app={}, environment=development", appTag);
+		log.info("Datadog registry created with tags: app={}, environment=development, service=fuente", appTag);
 		
 		initInfraMonitoring();
 	}

@@ -39,6 +39,19 @@ public class MetricsController {
         return ResponseEntity.ok("counter incremented");
     }
 
+    @GetMapping("/test-all-metrics")
+    public ResponseEntity<String> testAllMetrics() {
+        // Test counters
+        meterRegistry.counter("dds.colecciones", "operation", "test", "status", "ok").increment();
+        meterRegistry.counter("dds.hechos", "operation", "test", "status", "ok").increment();
+        
+        // Test gauge
+        debugGauge.set(42);
+        
+        log.info("🧪 Todas las métricas de testing ejecutadas");
+        return ResponseEntity.ok("all test metrics sent to datadog");
+    }
+
     @GetMapping("/test-timer")
     public ResponseEntity<String> testTimer() {
         return meterRegistry.timer("dds.test.timer").record(() -> {
@@ -66,5 +79,22 @@ public class MetricsController {
         meterRegistry.counter("dds.health", "status", "ok").increment();
         log.info("❤️ Health check ejecutado");
         return ResponseEntity.ok("metrics system healthy");
+    }
+
+    @GetMapping("/simulate-activity")
+    public ResponseEntity<String> simulateActivity() {
+        // Simular actividad de colecciones
+        meterRegistry.counter("dds.colecciones", "operation", "listar", "status", "ok").increment();
+        meterRegistry.counter("dds.colecciones", "operation", "crear", "status", "ok").increment();
+        
+        // Simular actividad de hechos
+        meterRegistry.counter("dds.hechos", "operation", "crear", "status", "ok").increment();
+        meterRegistry.counter("dds.hechos", "operation", "buscar", "status", "ok").increment();
+        
+        // Actualizar gauges
+        debugGauge.set((int)(Math.random() * 100));
+        
+        log.info("🎭 Actividad simulada enviada a Datadog");
+        return ResponseEntity.ok("activity simulated and sent to datadog");
     }
 }
