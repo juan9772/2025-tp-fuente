@@ -1,6 +1,5 @@
 package ar.edu.utn.dds.k3003.controller;
 
-import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
@@ -21,7 +20,6 @@ import java.util.NoSuchElementException;
 @RequestMapping("/api")
 public class HechoController {
 
-<<<<<<< HEAD
     private static final Logger log = LoggerFactory.getLogger(HechoController.class);
     private final FachadaFuente fachadaFuente;
     private final MeterRegistry meterRegistry;
@@ -29,12 +27,6 @@ public class HechoController {
 
     @Autowired
     public HechoController(FachadaFuente fachadaFuente, MeterRegistry meterRegistry) {
-=======
-    private final Fachada fachadaFuente;
-
-    @Autowired
-    public HechoController(Fachada fachadaFuente) {
->>>>>>> 089aabab5e579ce19e1144c6bf924b1939c10964
         this.fachadaFuente = fachadaFuente;
         this.meterRegistry = meterRegistry;
         
