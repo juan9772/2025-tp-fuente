@@ -1,7 +1,9 @@
 package ar.edu.utn.dds.k3003.controller;
 
+import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
+import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -12,11 +14,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api")
 public class HechoController {
 
+<<<<<<< HEAD
     private static final Logger log = LoggerFactory.getLogger(HechoController.class);
     private final FachadaFuente fachadaFuente;
     private final MeterRegistry meterRegistry;
@@ -24,6 +29,12 @@ public class HechoController {
 
     @Autowired
     public HechoController(FachadaFuente fachadaFuente, MeterRegistry meterRegistry) {
+=======
+    private final Fachada fachadaFuente;
+
+    @Autowired
+    public HechoController(Fachada fachadaFuente) {
+>>>>>>> 089aabab5e579ce19e1144c6bf924b1939c10964
         this.fachadaFuente = fachadaFuente;
         this.meterRegistry = meterRegistry;
         
@@ -84,6 +95,16 @@ public class HechoController {
             log.error("❌ Error al crear hecho", ex);
             meterRegistry.counter("dds.hechos", "operation", "crear", "status", "error").increment();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PatchMapping("/hecho/{id}")
+    public ResponseEntity<HechoDTO> actualizarEstadoHecho(@PathVariable String id, @RequestBody Map<String, String> estadoData) {
+        try {
+            String estado = estadoData.get("estado");
+            return ResponseEntity.ok(fachadaFuente.modificar(id, EstadoBorradoEnum.valueOf(estado)));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 }
