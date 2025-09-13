@@ -1,6 +1,8 @@
 package ar.edu.utn.dds.k3003.app;
 
 import ar.edu.utn.dds.k3003.clients.ProcesadorPdIProxy;
+import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
+import ar.edu.utn.dds.k3003.dtos.Hecho2DTO;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI;
 import ar.edu.utn.dds.k3003.facades.dtos.ColeccionDTO;
@@ -17,6 +19,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -74,7 +77,6 @@ public class Fachada implements FachadaFuente {
         }
         Hecho hecho =
                 new Hecho(
-                        null,
                         hechoDTO.nombreColeccion(),
                         hechoDTO.titulo(),
                         hechoDTO.etiquetas(),
@@ -151,4 +153,29 @@ public class Fachada implements FachadaFuente {
     public List<ColeccionDTO> colecciones(){
         return this.coleccionRepo.findAll().stream().map(coleccion -> new ColeccionDTO(coleccion.getNombre(), coleccion.getDescripcion()) ).toList();
     }
+
+    public HechoDTO modificar(String hechoId, EstadoBorradoEnum estado) throws NoSuchElementException {
+        // 1. Busca el hecho por su ID en el repositorio
+        Optional<Hecho> hechoOptional = hechoRepo.findById(hechoId);
+        if (hechoOptional.isEmpty()) {
+            throw new NoSuchElementException("Hecho no encontrado: " + hechoId);
+        }
+
+        // 2. Obtiene el objeto Hecho para modificarlo
+        Hecho hecho = hechoOptional.get();
+
+        // 3. Actualiza el estado
+        hecho.setEstado(estado);
+
+        // 4. Guarda los cambios en el repositorio
+        Hecho hechoModificado = hechoRepo.save(hecho);
+
+        // 5. Devuelve el DTO del hecho modificado
+        return new HechoDTO(
+                hechoModificado.getId().toString(),
+                hechoModificado.getNombreColeccion(),
+                hechoModificado.getTitulo()
+        );
+    }
+
 }
