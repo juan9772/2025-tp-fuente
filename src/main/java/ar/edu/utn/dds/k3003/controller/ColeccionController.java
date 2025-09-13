@@ -1,5 +1,6 @@
 package ar.edu.utn.dds.k3003.controller;
 
+import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.ColeccionDTO;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
@@ -20,12 +21,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ColeccionController {
 
     private static final Logger log = LoggerFactory.getLogger(ColeccionController.class);
-    private final FachadaFuente fachadaFuente;
+    private final Fachada fachadaFuente;
     private final MeterRegistry meterRegistry;
     private final AtomicInteger coleccionesActivasCount = new AtomicInteger(0);
 
     @Autowired
-    public ColeccionController(FachadaFuente fachadaFuente, MeterRegistry meterRegistry) {
+    public ColeccionController(Fachada fachadaFuente, MeterRegistry meterRegistry) {
         this.fachadaFuente = fachadaFuente;
         this.meterRegistry = meterRegistry;
         
@@ -132,5 +133,10 @@ public class ColeccionController {
             meterRegistry.counter("dds.colecciones", "operation", "crear", "status", "error").increment();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+    @DeleteMapping("colecciones")
+    public ResponseEntity<Void> borrarTodo() {
+        this.fachadaFuente.borrarAllColecciones();
+        return ResponseEntity.noContent().build();
     }
 } 

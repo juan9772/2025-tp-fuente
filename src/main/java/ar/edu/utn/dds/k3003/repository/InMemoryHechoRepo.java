@@ -31,4 +31,8 @@ public class InMemoryHechoRepo implements HechoRepository {
     public List<Hecho> findAll() {
         return this.hechos;
     }
+    @Override
+    public void deleteAll(){
+
+    }
 }

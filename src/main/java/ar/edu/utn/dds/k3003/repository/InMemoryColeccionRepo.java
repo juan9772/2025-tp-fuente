@@ -34,4 +34,10 @@ public class InMemoryColeccionRepo implements ColeccionRepository {
     public List<Coleccion> findAll() {
         return new ArrayList<>(colecciones);
     }
+
+    @Override
+    public void deleteAll(){
+
+    }
+
 }

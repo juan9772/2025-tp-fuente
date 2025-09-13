@@ -9,4 +9,6 @@ public interface HechoRepository {
     Optional<Hecho> findById(String id);
     List<Hecho> findAll();
     Hecho save(Hecho col);
+    void deleteAll();
+
 }

@@ -178,4 +178,11 @@ public class Fachada implements FachadaFuente {
         );
     }
 
+    public void borrarAllHechos() {
+        hechoRepo.deleteAll();
+    }
+    public void borrarAllColecciones() {
+        coleccionRepo.deleteAll();
+    }
+
 }

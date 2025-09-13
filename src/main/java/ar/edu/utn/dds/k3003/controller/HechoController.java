@@ -100,4 +100,9 @@ public class HechoController {
             return ResponseEntity.notFound().build();
         }
     }
+    @DeleteMapping("/hechos")
+    public ResponseEntity<Void> borrarTodo() {
+        this.fachadaFuente.borrarAllHechos();
+        return ResponseEntity.noContent().build();
+    }
 }
