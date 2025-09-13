@@ -118,4 +118,31 @@ public class MetricsController {
             return ResponseEntity.status(500).body("Error: " + ex.getMessage());
         }
     }
+
+    // Endpoint para verificar estado de Datadog
+    @GetMapping("/datadog-status")
+    public ResponseEntity<Map<String, Object>> datadogStatus() {
+        Map<String, Object> status = new HashMap<>();
+        
+        try {
+            // Verificar si MeterRegistry es de tipo Datadog
+            status.put("meterRegistryType", meterRegistry.getClass().getSimpleName());
+            
+            // Contar métricas registradas
+            int metricsCount = meterRegistry.getMeters().size();
+            status.put("registeredMetrics", metricsCount);
+            
+            // Buscar métricas específicas
+            status.put("debugGaugeExists", meterRegistry.find("dds.debug.gauge").gauge() != null);
+            status.put("testCounterExists", meterRegistry.find("dds.test.simple").counter() != null);
+            
+            log.info("📊 Estado Datadog verificado: {} métricas registradas", metricsCount);
+            return ResponseEntity.ok(status);
+            
+        } catch (Exception ex) {
+            status.put("error", ex.getMessage());
+            log.error("❌ Error verificando estado Datadog: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).body(status);
+        }
+    }
 }
