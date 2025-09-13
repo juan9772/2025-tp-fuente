@@ -107,6 +107,11 @@
           <artifactId>jackson-datatype-jsr310</artifactId>
           <version>2.17.1</version>
       </dependency>
+      <dependency>
+          <groupId>io.micrometer</groupId>
+          <artifactId>micrometer-registry-datadog</artifactId>
+          <version>1.12.0</version>
+      </dependency>
 
   </dependencies>
 
@@ -122,11 +127,7 @@
               <artifactId>lombok</artifactId>
             </exclude>
           </excludes>
-    <dependency>
-        <groupId>io.micrometer</groupId>
-        <artifactId>micrometer-registry-datadog</artifactId>
-        <version>1.12.0</version>
-    </dependency>
+
         </configuration>
       </plugin>
       <plugin>

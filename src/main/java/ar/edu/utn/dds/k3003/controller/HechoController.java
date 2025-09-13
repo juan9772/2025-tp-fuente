@@ -3,19 +3,32 @@ package ar.edu.utn.dds.k3003.controller;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping("/api")
 public class HechoController {
 
+    private static final Logger log = LoggerFactory.getLogger(HechoController.class);
     private final FachadaFuente fachadaFuente;
+    private final MeterRegistry meterRegistry;
+    private final AtomicInteger hechosActivosCount = new AtomicInteger(0);
 
     @Autowired
-    public HechoController(FachadaFuente fachadaFuente) {
+    public HechoController(FachadaFuente fachadaFuente, MeterRegistry meterRegistry) {
         this.fachadaFuente = fachadaFuente;
+        this.meterRegistry = meterRegistry;
+        
+        // Registrar gauge dinámico al inicializar
+        meterRegistry.gauge("dds.hechos.activos.count", hechosActivosCount);
     }
 
     //    @GetMapping
@@ -25,11 +38,52 @@ public class HechoController {
 
     @GetMapping("/hecho/{id}")
     public ResponseEntity<HechoDTO> obtenerHecho(@PathVariable String id) {
-        return ResponseEntity.ok(fachadaFuente.buscarHechoXId(id));
+        log.debug("🔍 Buscando hecho por ID: {}", id);
+        
+        try {
+            HechoDTO hecho = fachadaFuente.buscarHechoXId(id);
+            
+            // Como el ejemplo: status=ok
+            meterRegistry.counter("dds.hechos", "operation", "buscar", "status", "ok").increment();
+            log.info("✅ Hecho encontrado: {}", id);
+            
+            return ResponseEntity.ok(hecho);
+            
+        } catch (Exception ex) {
+            // Como el ejemplo: status=error
+            log.error("❌ Error al buscar hecho {}", id, ex);
+            meterRegistry.counter("dds.hechos", "operation", "buscar", "status", "error").increment();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     @PostMapping("/hecho")
-    public ResponseEntity<HechoDTO> crearHecho(@RequestBody HechoDTO Hecho) {
-        return ResponseEntity.ok(fachadaFuente.agregar(Hecho));
+    public ResponseEntity<HechoDTO> crearHecho(@RequestBody HechoDTO hecho) {
+        log.debug("📝 Creando nuevo hecho");
+        
+        try {
+            HechoDTO resultado = fachadaFuente.agregar(hecho);
+            
+            // Actualizar gauge dinámico
+            hechosActivosCount.incrementAndGet();
+            
+            // Como el ejemplo: status=ok  
+            meterRegistry.counter("dds.hechos", "operation", "crear", "status", "ok").increment();
+            log.info("✅ Hecho creado exitosamente con ID: {}", resultado.getId());
+            
+            return ResponseEntity.ok(resultado);
+            
+        } catch (IllegalArgumentException ex) {
+            // Como el ejemplo: status=rejected
+            log.warn("⚠️ Hecho no aprobado: {}", ex.getMessage());
+            meterRegistry.counter("dds.hechos", "operation", "crear", "status", "rejected").increment();
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
+            
+        } catch (Exception ex) {
+            // Como el ejemplo: status=error
+            log.error("❌ Error al crear hecho", ex);
+            meterRegistry.counter("dds.hechos", "operation", "crear", "status", "error").increment();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 }
