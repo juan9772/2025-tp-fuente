@@ -40,7 +40,7 @@ public class HechoController {
     //        return ResponseEntity.ok(fachadaFuente.Hechos());
     //    }
 
-    @GetMapping("/hecho/{id}")
+    @GetMapping("/hechos/{id}")
     public ResponseEntity<HechoDTO> obtenerHecho(@PathVariable String id) {
         log.debug("🔍 Buscando hecho por ID: {}", id);
         
@@ -61,7 +61,7 @@ public class HechoController {
         }
     }
 
-    @PostMapping("/hecho")
+    @PostMapping("/hechos")
     public ResponseEntity<HechoDTO> crearHecho(@RequestBody HechoDTO hecho) {
         log.debug("📝 Creando nuevo hecho");
         
@@ -91,7 +91,7 @@ public class HechoController {
         }
     }
 
-    @PatchMapping("/hecho/{id}")
+    @PatchMapping("/hechos/{id}")
     public ResponseEntity<HechoDTO> actualizarEstadoHecho(@PathVariable String id, @RequestBody Map<String, String> estadoData) {
         try {
             String estado = estadoData.get("estado");

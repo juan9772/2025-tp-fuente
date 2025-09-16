@@ -58,7 +58,7 @@ public class ColeccionController {
         }
     }
 
-    @GetMapping("/coleccion/{nombre}")
+    @GetMapping("/colecciones/{nombre}")
     public ResponseEntity<ColeccionDTO> obtenerColeccion(@PathVariable String nombre) {
         log.debug("🔍 Buscando colección: {}", nombre);
         
@@ -79,7 +79,7 @@ public class ColeccionController {
         }
     }
     
-    @GetMapping("/coleccion/{nombre}/hechos")
+    @GetMapping("/colecciones/{nombre}/hechos")
     public ResponseEntity<List<HechoDTO>> obtenerHechosXColeccion(@PathVariable String nombre) {
         log.debug("🔍 Buscando hechos para colección: {}", nombre);
         
@@ -105,7 +105,7 @@ public class ColeccionController {
         }
     }
 
-    @PostMapping("/coleccion")
+    @PostMapping("/colecciones")
     public ResponseEntity<ColeccionDTO> crearColeccion(@RequestBody ColeccionDTO coleccion) {
         log.debug("📝 Creando nueva colección: {}", coleccion.nombre());
         
