@@ -1,8 +1,7 @@
 package ar.edu.utn.dds.k3003.app;
 
-import ar.edu.utn.dds.k3003.clients.ProcesadorPdIProxy;
+import ar.edu.utn.dds.k3003.client.ProcesadorPdIProxy;
 import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
-import ar.edu.utn.dds.k3003.dtos.Hecho2DTO;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI;
 import ar.edu.utn.dds.k3003.facades.dtos.ColeccionDTO;
@@ -12,7 +11,6 @@ import ar.edu.utn.dds.k3003.model.Coleccion;
 import ar.edu.utn.dds.k3003.model.Hecho;
 import ar.edu.utn.dds.k3003.repository.*;
 
-import lombok.Data;
 import lombok.val;
 
 import java.io.IOException;

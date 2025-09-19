@@ -134,7 +134,7 @@ public class ColeccionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-    @DeleteMapping("colecciones")
+    @DeleteMapping("/colecciones")
     public ResponseEntity<Void> borrarTodo() {
         this.fachadaFuente.borrarAllColecciones();
         return ResponseEntity.noContent().build();
