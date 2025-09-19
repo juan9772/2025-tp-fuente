@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/api")
 public class HechoController {
 

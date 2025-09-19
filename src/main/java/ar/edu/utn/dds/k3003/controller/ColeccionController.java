@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "*")
 public class ColeccionController {
 
     private static final Logger log = LoggerFactory.getLogger(ColeccionController.class);
