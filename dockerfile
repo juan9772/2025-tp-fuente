@@ -13,5 +13,8 @@ VOLUME /tmp
 
 # Copy the JAR from the build stage
 COPY --from=build /app/target/*.jar app.jar
-ENTRYPOINT ["java","-jar","/app.jar"]
+
+# Debug: Print environment variables and then run the application
+ENTRYPOINT ["sh", "-c", "echo '--- Verifying Environment Variables ---' && echo 'URLPOSTGRE: $URLPOSTGRE' && echo 'USRNME: $USRNME' && echo '--- Starting application ---' && java -jar /app.jar"]
+
 EXPOSE 8080
