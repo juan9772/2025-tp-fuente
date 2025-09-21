@@ -2,6 +2,7 @@ package ar.edu.utn.dds.k3003.app;
 
 import ar.edu.utn.dds.k3003.client.ProcesadorPdIProxy;
 import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
+import ar.edu.utn.dds.k3003.dtos.Hecho2DTO;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI;
 import ar.edu.utn.dds.k3003.facades.dtos.ColeccionDTO;
@@ -175,6 +176,20 @@ public class Fachada implements FachadaFuente {
                 hechoModificado.getNombreColeccion(),
                 hechoModificado.getTitulo()
         );
+    }
+
+    public List<HechoDTO> obtenerHechos() {
+        return hechoRepo.findAll().stream()
+                .map(hecho -> new HechoDTO(
+                        hecho.getId().toString(),
+                        hecho.getNombreColeccion(),
+                        hecho.getTitulo(),
+                        hecho.getEtiquetas(),
+                        hecho.getCategoria(),
+                        hecho.getUbicacion(),
+                        hecho.getFecha(),
+                        hecho.getOrigen()))
+                .toList();
     }
 
     public void borrarAllHechos() {

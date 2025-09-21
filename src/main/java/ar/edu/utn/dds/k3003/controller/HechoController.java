@@ -4,7 +4,9 @@ import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
-
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +63,20 @@ public class HechoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+// src/main/java/ar/edu/utn/dds/k3003/controller/HechoController.java
+
+    @GetMapping("/hechos")
+    public ResponseEntity<List<HechoDTO>> obtenerHechos() {
+        try {
+            List<HechoDTO> hechos = fachadaFuente.obtenerHechos();
+            return ResponseEntity.ok(hechos);
+        } catch (Exception ex) {
+            log.error("❌ Error al obtener hechos", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 
     @PostMapping("/hechos")
     public ResponseEntity<HechoDTO> crearHecho(@RequestBody HechoDTO hecho) {
