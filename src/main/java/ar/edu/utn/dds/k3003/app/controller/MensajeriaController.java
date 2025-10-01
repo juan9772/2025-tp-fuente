@@ -19,4 +19,3 @@ public class MensajeriaController {
         return "Mensaje enviado correctamente";
     }
 }
-
