@@ -122,7 +122,7 @@ public class Fachada implements FachadaFuente {
         }
         val hechos = this.hechoRepo.findAll();
         return hechos.stream()
-                .filter(hecho -> hecho.getNombreColeccion().equals(s))
+            .filter(hecho -> s.equals(hecho.getNombreColeccion()))
                 .filter(hecho -> hecho.getEstado().equals(EstadoBorradoEnum.NO_BORRADO)) // <-- Condición adicional para filtrar por estado
                 .map(hecho -> new HechoDTO(
                         hecho.getId().toString(),
