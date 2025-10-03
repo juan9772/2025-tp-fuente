@@ -1,14 +1,26 @@
 package ar.edu.utn.dds.k3003.config;
 
-import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange; // <-- IMPORTANTE: Cambiamos a TopicExchange
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitConfig {
+
+    // Nombre de nuestro topic exchange principal.
+    public static final java.lang.String TOPIC_EXCHANGE_NAME = "hechos-topic-exchange";
+
+    // Define el bean para nuestro exchange de tipo topic.
     @Bean
-    public Queue mspsbdsjQueue() {
-        // durable=true para que la cola persista
-        return new Queue("mspsbdsj", true);
+    public TopicExchange topicExchange() {
+        return new TopicExchange(TOPIC_EXCHANGE_NAME);
+    }
+
+    // El RabbitAdmin sigue siendo crucial para crear y gestionar todo dinámicamente.
+    @Bean
+    public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
+        return new RabbitAdmin(connectionFactory);
     }
 }
