@@ -14,7 +14,7 @@ public class ProcesadorPdIProxy  {
     public ProcesadorPdIProxy(ObjectMapper objectMapper) {
 
         var env = System.getenv();
-        this.endpoint = env.getOrDefault("ProcesadorPdI", "http://two025-dds-tp-procesadorpdi.onrender.com");
+        this.endpoint = env.getOrDefault("ProcesadorPdI", "https://two025-dds-tp-procesadorpdi.onrender.com");
 
         var retrofit =
                 new Retrofit.Builder()
