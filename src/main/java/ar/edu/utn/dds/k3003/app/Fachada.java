@@ -219,6 +219,12 @@ public class Fachada implements FachadaFuente {
 
     public java.util.List<HechoDTO> obtenerHechos() {
         return hechoRepo.findAll().stream()
+                .peek(hecho -> {
+                    if (hecho.getEstado() == null) {
+                        hecho.setEstado(EstadoBorradoEnum.NO_BORRADO);
+                        hechoRepo.save(hecho);
+                    }
+                }).filter(hecho -> hecho.getEstado().equals(EstadoBorradoEnum.NO_BORRADO)) // <-- Condición adicional para filtrar por estado
                 .map(hecho -> new HechoDTO(
                         hecho.getId().toString(),
                         hecho.getNombreColeccion(),
