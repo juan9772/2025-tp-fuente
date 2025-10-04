@@ -1,11 +1,16 @@
 package ar.edu.utn.dds.k3003.controller;
 
 import ar.edu.utn.dds.k3003.app.Fachada;
+import ar.edu.utn.dds.k3003.client.ProcesadorPdIProxy;
+import ar.edu.utn.dds.k3003.dtos.PdI_DTO;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.io.IOException;
 import java.util.List;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -28,12 +33,13 @@ public class HechoController {
     private final Fachada fachadaFuente;
     private final MeterRegistry meterRegistry;
     private final AtomicInteger hechosActivosCount = new AtomicInteger(0);
+    private final ProcesadorPdIProxy procesadorPdi;
 
     @Autowired
-    public HechoController(Fachada fachadaFuente, MeterRegistry meterRegistry) {
+    public HechoController(Fachada fachadaFuente, MeterRegistry meterRegistry, ObjectMapper objectMapper ) {
         this.fachadaFuente = fachadaFuente;
         this.meterRegistry = meterRegistry;
-        
+        this.procesadorPdi=new ProcesadorPdIProxy(objectMapper);
         // Registrar gauge dinámico al inicializar
         meterRegistry.gauge("dds.hechos.activos.count", hechosActivosCount);
     }
@@ -121,5 +127,9 @@ public class HechoController {
     public ResponseEntity<Void> borrarTodo() {
         this.fachadaFuente.borrarAllHechos();
         return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/pdis")
+    public ResponseEntity<PdI_DTO> crearPdI(@RequestBody PdI_DTO pdIDTO) throws IOException {
+        return ResponseEntity.ok(procesadorPdi.procesar(pdIDTO));
     }
 }

@@ -1,5 +1,6 @@
 package ar.edu.utn.dds.k3003.client;
 
+import ar.edu.utn.dds.k3003.dtos.PdI_DTO;
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import retrofit2.Retrofit;
@@ -13,7 +14,7 @@ public class ProcesadorPdIProxy  {
     public ProcesadorPdIProxy(ObjectMapper objectMapper) {
 
         var env = System.getenv();
-        this.endpoint = env.getOrDefault("ProcesadorPdI", "https://two025-dds-tp-procesadorpdi.onrender.com");
+        this.endpoint = env.getOrDefault("ProcesadorPdI", "http://two025-dds-tp-procesadorpdi.onrender.com");
 
         var retrofit =
                 new Retrofit.Builder()
@@ -24,7 +25,7 @@ public class ProcesadorPdIProxy  {
         this.service = retrofit.create(ProcesadorPdIRetrofitClient.class);
     }
 
-    public PdIDTO procesar(PdIDTO pdIDTO) throws java.io.IOException {
+    public PdI_DTO procesar(PdI_DTO pdIDTO) throws java.io.IOException {
         var res = service.procesarPdi(pdIDTO).execute();
         if (!res.isSuccessful()) {
             throw new RuntimeException("Error conectandose con procesadorPdi (" +String.valueOf( res.code())+ ")");
