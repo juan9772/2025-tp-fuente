@@ -6,6 +6,7 @@ import ar.edu.utn.dds.k3003.dtos.PdI_DTO;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
+import ar.edu.utn.dds.k3003.service.EventPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,12 +35,14 @@ public class HechoController {
     private final MeterRegistry meterRegistry;
     private final AtomicInteger hechosActivosCount = new AtomicInteger(0);
     private final ProcesadorPdIProxy procesadorPdi;
+    private final EventPublisher eventPublisher;
 
     @Autowired
-    public HechoController(Fachada fachadaFuente, MeterRegistry meterRegistry, ObjectMapper objectMapper ) {
+    public HechoController(Fachada fachadaFuente, MeterRegistry meterRegistry, ObjectMapper objectMapper, EventPublisher eventPublisher) {
         this.fachadaFuente = fachadaFuente;
         this.meterRegistry = meterRegistry;
-        this.procesadorPdi=new ProcesadorPdIProxy(objectMapper);
+        this.procesadorPdi = new ProcesadorPdIProxy(objectMapper);
+        this.eventPublisher = eventPublisher;
         // Registrar gauge dinámico al inicializar
         meterRegistry.gauge("dds.hechos.activos.count", hechosActivosCount);
     }
@@ -98,6 +101,9 @@ public class HechoController {
             meterRegistry.counter("dds.hechos", "operation", "crear", "status", "ok").increment();
             log.info("✅ Hecho creado exitosamente con ID: {}", resultado.id());
             
+            // NUEVO: Emitir evento para consistencia eventual
+            eventPublisher.emitirHechoCreado(resultado.id());
+            
             return ResponseEntity.ok(resultado);
             
         } catch (IllegalArgumentException ex) {
@@ -118,7 +124,12 @@ public class HechoController {
     public ResponseEntity<HechoDTO> actualizarEstadoHecho(@PathVariable String id, @RequestBody Map<String, String> estadoData) {
         try {
             String estado = estadoData.get("estado");
-            return ResponseEntity.ok(fachadaFuente.modificar(id, EstadoBorradoEnum.valueOf(estado)));
+            HechoDTO resultado = fachadaFuente.modificar(id, EstadoBorradoEnum.valueOf(estado));
+            
+            // NUEVO: Emitir evento de actualización
+            eventPublisher.emitirHechoActualizado(id);
+            
+            return ResponseEntity.ok(resultado);
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
         }
