@@ -1,17 +1,10 @@
 package ar.edu.utn.dds.k3003.controller;
 
-import ar.edu.utn.dds.k3003.app.Fachada;
-import ar.edu.utn.dds.k3003.client.ProcesadorPdIProxy;
-import ar.edu.utn.dds.k3003.dtos.PdI_DTO;
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.dtos.EstadoBorradoEnum;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
-import java.util.List;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,23 +18,61 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api")
 public class HechoController {
 
     private static final Logger log = LoggerFactory.getLogger(HechoController.class);
-    private final Fachada fachadaFuente;
+    private final FachadaFuente fachadaFuente;
     private final MeterRegistry meterRegistry;
     private final AtomicInteger hechosActivosCount = new AtomicInteger(0);
-    private final ProcesadorPdIProxy procesadorPdi;
+    
+    // Counters creados una sola vez para mejor performance
+    private final Counter hechosBusquedaOkCounter;
+    private final Counter hechosBusquedaErrorCounter;
+    private final Counter hechosCrearOkCounter;
+    private final Counter hechosCrearRejectedCounter;
+    private final Counter hechosCrearErrorCounter;
 
     @Autowired
-    public HechoController(Fachada fachadaFuente, MeterRegistry meterRegistry, ObjectMapper objectMapper ) {
+    public HechoController(FachadaFuente fachadaFuente, MeterRegistry meterRegistry) {
         this.fachadaFuente = fachadaFuente;
         this.meterRegistry = meterRegistry;
-        this.procesadorPdi=new ProcesadorPdIProxy(objectMapper);
+        
         // Registrar gauge dinámico al inicializar
         meterRegistry.gauge("dds.hechos.activos.count", hechosActivosCount);
+        
+        // Crear todos los counters una sola vez
+        this.hechosBusquedaOkCounter = Counter.builder("dds.hechos")
+            .tag("operation", "buscar")
+            .tag("status", "ok")
+            .description("Búsquedas exitosas de hechos")
+            .register(meterRegistry);
+            
+        this.hechosBusquedaErrorCounter = Counter.builder("dds.hechos")
+            .tag("operation", "buscar")
+            .tag("status", "error")
+            .description("Búsquedas fallidas de hechos")
+            .register(meterRegistry);
+            
+        this.hechosCrearOkCounter = Counter.builder("dds.hechos")
+            .tag("operation", "crear")
+            .tag("status", "ok")
+            .description("Hechos creados exitosamente")
+            .register(meterRegistry);
+            
+        this.hechosCrearRejectedCounter = Counter.builder("dds.hechos")
+            .tag("operation", "crear")
+            .tag("status", "rejected")
+            .description("Hechos rechazados por validación")
+            .register(meterRegistry);
+            
+        this.hechosCrearErrorCounter = Counter.builder("dds.hechos")
+            .tag("operation", "crear")
+            .tag("status", "error")
+            .description("Errores al crear hechos")
+            .register(meterRegistry);
+            
+        log.info("✅ HechoController inicializado con métricas optimizadas");
     }
 
     //    @GetMapping
@@ -49,87 +80,62 @@ public class HechoController {
     //        return ResponseEntity.ok(fachadaFuente.Hechos());
     //    }
 
-    @GetMapping("/hechos/{id}")
+    @GetMapping("/hecho/{id}")
     public ResponseEntity<HechoDTO> obtenerHecho(@PathVariable String id) {
         log.debug("🔍 Buscando hecho por ID: {}", id);
         
         try {
             HechoDTO hecho = fachadaFuente.buscarHechoXId(id);
-            
-            // Como el ejemplo: status=ok
-            meterRegistry.counter("dds.hechos", "operation", "buscar", "status", "ok").increment();
+            hechosBusquedaOkCounter.increment(); // Usar counter pre-creado
             log.info("✅ Hecho encontrado: {}", id);
-            
             return ResponseEntity.ok(hecho);
             
         } catch (Exception ex) {
-            // Como el ejemplo: status=error
             log.error("❌ Error al buscar hecho {}", id, ex);
-            meterRegistry.counter("dds.hechos", "operation", "buscar", "status", "error").increment();
+            hechosBusquedaErrorCounter.increment();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
-// src/main/java/ar/edu/utn/dds/k3003/controller/HechoController.java
-
-    @GetMapping("/hechos")
-    public ResponseEntity<List<HechoDTO>> obtenerHechos() {
-        try {
-            List<HechoDTO> hechos = fachadaFuente.obtenerHechos();
-            return ResponseEntity.ok(hechos);
-        } catch (Exception ex) {
-            log.error("❌ Error al obtener hechos", ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
-
-    @PostMapping("/hechos")
+    @PostMapping("/hecho")
     public ResponseEntity<HechoDTO> crearHecho(@RequestBody HechoDTO hecho) {
         log.debug("📝 Creando nuevo hecho");
         
         try {
             HechoDTO resultado = fachadaFuente.agregar(hecho);
-            
-            // Actualizar gauge dinámico
-            hechosActivosCount.incrementAndGet();
-            
-            // Como el ejemplo: status=ok  
-            meterRegistry.counter("dds.hechos", "operation", "crear", "status", "ok").increment();
-            log.info("✅ Hecho creado exitosamente con ID: {}", resultado.id());
-            
+            hechosActivosCount.incrementAndGet(); // Actualizar gauge
+            hechosCrearOkCounter.increment(); // Usar counter pre-creado
+            log.info("✅ Hecho creado exitosamente con ID: {}", resultado.getId());
             return ResponseEntity.ok(resultado);
             
         } catch (IllegalArgumentException ex) {
-            // Como el ejemplo: status=rejected
             log.warn("⚠️ Hecho no aprobado: {}", ex.getMessage());
-            meterRegistry.counter("dds.hechos", "operation", "crear", "status", "rejected").increment();
+            hechosCrearRejectedCounter.increment();
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
             
         } catch (Exception ex) {
-            // Como el ejemplo: status=error
             log.error("❌ Error al crear hecho", ex);
-            meterRegistry.counter("dds.hechos", "operation", "crear", "status", "error").increment();
+            hechosCrearErrorCounter.increment();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
-    @PatchMapping("/hechos/{id}")
+    @PatchMapping("/hecho/{id}")
     public ResponseEntity<HechoDTO> actualizarEstadoHecho(@PathVariable String id, @RequestBody Map<String, String> estadoData) {
         try {
-            String estado = estadoData.get("estado");
-            return ResponseEntity.ok(fachadaFuente.modificar(id, EstadoBorradoEnum.valueOf(estado)));
+            String estadoStr = estadoData.get("estado");
+            EstadoBorradoEnum nuevoEstado = EstadoBorradoEnum.valueOf(estadoStr);
+            HechoDTO resultado = fachadaFuente.modificar(id, nuevoEstado);
+            
+            // Si se marca como borrado, decrementar el gauge
+            if (nuevoEstado == EstadoBorradoEnum.BORRADO) {
+                hechosActivosCount.decrementAndGet();
+                log.info("📉 Hecho {} marcado como borrado. Total activos: {}", id, hechosActivosCount.get());
+            }
+            
+            return ResponseEntity.ok(resultado);
         } catch (NoSuchElementException e) {
             return ResponseEntity.notFound().build();
         }
-    }
-    @DeleteMapping("/hechos")
-    public ResponseEntity<Void> borrarTodo() {
-        this.fachadaFuente.borrarAllHechos();
-        return ResponseEntity.noContent().build();
-    }
-    @PostMapping("/pdis")
-    public ResponseEntity<PdI_DTO> crearPdI(@RequestBody PdI_DTO pdIDTO) throws IOException {
-        return ResponseEntity.ok(procesadorPdi.procesar(pdIDTO));
     }
 }

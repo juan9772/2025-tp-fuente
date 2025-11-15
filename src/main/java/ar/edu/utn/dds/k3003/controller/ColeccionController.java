@@ -5,7 +5,9 @@ import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.dtos.ColeccionDTO;
 import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
@@ -25,14 +29,52 @@ public class ColeccionController {
     private final Fachada fachadaFuente;
     private final MeterRegistry meterRegistry;
     private final AtomicInteger coleccionesActivasCount = new AtomicInteger(0);
+    private final AtomicInteger coleccionesTotalCount = new AtomicInteger(0);
+    
+    // Map para gauges dinámicos con tags (hechos por colección)
+    private final Map<String, AtomicInteger> hechosPorColeccionGauges = new ConcurrentHashMap<>();
+    
+    // Counters creados una sola vez para mejor performance
+    private final Counter coleccionesListarOkCounter;
+    private final Counter coleccionesListarErrorCounter;
+    private final Counter coleccionesBuscarOkCounter;
+    private final Counter coleccionesBuscarErrorCounter;
+    private final Counter coleccionesBuscarHechosOkCounter;
+    private final Counter coleccionesBuscarHechosErrorCounter;
+    private final Counter coleccionesCrearOkCounter;
+    private final Counter coleccionesCrearRejectedCounter;
+    private final Counter coleccionesCrearErrorCounter;
 
     @Autowired
     public ColeccionController(Fachada fachadaFuente, MeterRegistry meterRegistry) {
         this.fachadaFuente = fachadaFuente;
         this.meterRegistry = meterRegistry;
         
-        // Registrar gauge dinámico al inicializar
+        // Registrar gauges al inicializar
         meterRegistry.gauge("dds.colecciones.activas.count", coleccionesActivasCount);
+        meterRegistry.gauge("dds.colecciones.total.count", coleccionesTotalCount);
+        
+        // Crear todos los counters una sola vez
+        this.coleccionesListarOkCounter = Counter.builder("dds.colecciones")
+            .tag("operation", "listar").tag("status", "ok").register(meterRegistry);
+        this.coleccionesListarErrorCounter = Counter.builder("dds.colecciones")
+            .tag("operation", "listar").tag("status", "error").register(meterRegistry);
+        this.coleccionesBuscarOkCounter = Counter.builder("dds.colecciones")
+            .tag("operation", "buscar").tag("status", "ok").register(meterRegistry);
+        this.coleccionesBuscarErrorCounter = Counter.builder("dds.colecciones")
+            .tag("operation", "buscar").tag("status", "error").register(meterRegistry);
+        this.coleccionesBuscarHechosOkCounter = Counter.builder("dds.colecciones")
+            .tag("operation", "buscar_hechos").tag("status", "ok").register(meterRegistry);
+        this.coleccionesBuscarHechosErrorCounter = Counter.builder("dds.colecciones")
+            .tag("operation", "buscar_hechos").tag("status", "error").register(meterRegistry);
+        this.coleccionesCrearOkCounter = Counter.builder("dds.colecciones")
+            .tag("operation", "crear").tag("status", "ok").register(meterRegistry);
+        this.coleccionesCrearRejectedCounter = Counter.builder("dds.colecciones")
+            .tag("operation", "crear").tag("status", "rejected").register(meterRegistry);
+        this.coleccionesCrearErrorCounter = Counter.builder("dds.colecciones")
+            .tag("operation", "crear").tag("status", "error").register(meterRegistry);
+            
+        log.info("✅ ColeccionController inicializado con métricas optimizadas");
     }
 
     @GetMapping("/colecciones")
@@ -41,41 +83,32 @@ public class ColeccionController {
         
         try {
             List<ColeccionDTO> colecciones = fachadaFuente.colecciones();
-            
-            // Gauge dinámico con el tamaño actual
-            meterRegistry.gauge("dds.colecciones.total.count", colecciones.size());
-            
-            // Como el ejemplo: status=ok
-            meterRegistry.counter("dds.colecciones", "operation", "listar", "status", "ok").increment();
+            coleccionesTotalCount.set(colecciones.size()); // Actualizar gauge
+            coleccionesListarOkCounter.increment(); // Usar counter pre-creado
             log.info("✅ Encontradas {} colecciones", colecciones.size());
             
             return ResponseEntity.ok(colecciones);
             
         } catch (Exception ex) {
-            // Como el ejemplo: status=error
             log.error("❌ Error al listar colecciones", ex);
-            meterRegistry.counter("dds.colecciones", "operation", "listar", "status", "error").increment();
+            coleccionesListarErrorCounter.increment();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     @GetMapping("/colecciones/{nombre}")
-    public ResponseEntity<ColeccionDTO> obtenerColeccion(@PathVariable String nombre) {
+    public ResponseEntity<ColeccionDTO> buscarColeccion(@PathVariable String nombre) {
         log.debug("🔍 Buscando colección: {}", nombre);
         
         try {
-            ColeccionDTO coleccion = fachadaFuente.buscarColeccionXId(nombre);
-            
-            // Como el ejemplo: status=ok
-            meterRegistry.counter("dds.colecciones", "operation", "buscar", "status", "ok").increment();
+            ColeccionDTO coleccion = fachadaFuente.buscarColeccionXNombre(nombre);
+            coleccionesBuscarOkCounter.increment();
             log.info("✅ Colección encontrada: {}", nombre);
-            
             return ResponseEntity.ok(coleccion);
             
         } catch (Exception ex) {
-            // Como el ejemplo: status=error
             log.error("❌ Error al buscar colección {}", nombre, ex);
-            meterRegistry.counter("dds.colecciones", "operation", "buscar", "status", "error").increment();
+            coleccionesBuscarErrorCounter.increment();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -87,21 +120,23 @@ public class ColeccionController {
         try {
             List<HechoDTO> hechos = fachadaFuente.buscarHechosXColeccion(nombre);
             
-            // Gauge dinámico con hechos por colección - usando Tags correctamente
-            meterRegistry.gauge("dds.hechos.por.coleccion", 
-                io.micrometer.core.instrument.Tags.of("coleccion", nombre), 
-                hechos.size());
+            // Actualizar gauge dinámico con tags correctos
+            AtomicInteger gauge = hechosPorColeccionGauges.computeIfAbsent(nombre, key -> {
+                AtomicInteger newGauge = new AtomicInteger(0);
+                meterRegistry.gauge("dds.hechos.por.coleccion", 
+                    Tags.of("coleccion", nombre), 
+                    newGauge);
+                return newGauge;
+            });
+            gauge.set(hechos.size());
             
-            // Como el ejemplo: status=ok
-            meterRegistry.counter("dds.colecciones", "operation", "buscar_hechos", "status", "ok").increment();
+            coleccionesBuscarHechosOkCounter.increment();
             log.info("✅ Encontrados {} hechos para colección {}", hechos.size(), nombre);
-            
             return ResponseEntity.ok(hechos);
             
         } catch (Exception ex) {
-            // Como el ejemplo: status=error
             log.error("❌ Error al buscar hechos para colección {}", nombre, ex);
-            meterRegistry.counter("dds.colecciones", "operation", "buscar_hechos", "status", "error").increment();
+            coleccionesBuscarHechosErrorCounter.increment();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -112,26 +147,19 @@ public class ColeccionController {
         
         try {
             ColeccionDTO resultado = fachadaFuente.agregar(coleccion);
-            
-            // Actualizar gauge dinámico
-            coleccionesActivasCount.incrementAndGet();
-            
-            // Como el ejemplo: status=ok
-            meterRegistry.counter("dds.colecciones", "operation", "crear", "status", "ok").increment();
+            coleccionesActivasCount.incrementAndGet(); // Actualizar gauge
+            coleccionesCrearOkCounter.increment(); // Usar counter pre-creado
             log.info("✅ Colección creada exitosamente: {}", resultado.nombre());
-            
             return ResponseEntity.ok(resultado);
             
         } catch (IllegalArgumentException ex) {
-            // Como el ejemplo: status=rejected
             log.warn("⚠️ Colección no aprobada: {}", ex.getMessage());
-            meterRegistry.counter("dds.colecciones", "operation", "crear", "status", "rejected").increment();
+            coleccionesCrearRejectedCounter.increment();
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
             
         } catch (Exception ex) {
-            // Como el ejemplo: status=error
             log.error("❌ Error al crear colección", ex);
-            meterRegistry.counter("dds.colecciones", "operation", "crear", "status", "error").increment();
+            coleccionesCrearErrorCounter.increment();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
